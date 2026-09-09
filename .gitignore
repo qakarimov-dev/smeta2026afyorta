@@ -1,0 +1,30 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Environment variables & secrets (CRITICAL)
+.env
+
+# Database
+*.db
+*.sqlite3
+smeta.db
+
+# Logs
+*.log
+logs/
+
+# Temporary test scripts
+test_bot.py
+check_bot_info.py
+
+# IDE files
+.vscode/
+.idea/
