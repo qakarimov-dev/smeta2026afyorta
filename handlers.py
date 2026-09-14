@@ -1,6 +1,7 @@
 import logging
-from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from typing import Callable, Dict, Any, Awaitable
+from aiogram import Router, F, BaseMiddleware
+from aiogram.types import Message, CallbackQuery, TelegramObject
 from aiogram.filters import CommandStart, Command
 from aiogram.enums import ChatAction
 
@@ -12,6 +13,37 @@ from database import save_calculation, get_daily_report_text, get_total_statisti
 
 logger = logging.getLogger(__name__)
 router = Router()
+
+
+class AccessControlMiddleware(BaseMiddleware):
+    """Faqat ruxsat etilgan ID larga botdan foydalanish imkonini beruvchi himoya qatlami"""
+
+    async def __call__(
+        self,
+        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: Dict[str, Any],
+    ) -> Any:
+        user = data.get("event_from_user")
+        if user and not config.is_allowed_user(user.id):
+            if isinstance(event, Message):
+                await event.answer(
+                    f"⛔️ **Kirish cheklangan!**\n\n"
+                    f"Kechirasiz, ushbu bot shaxsiy muhandislik xizmati bo'lib, faqat ruxsat etilgan mutaxassislar uchun ochiq.\n\n"
+                    f"🆔 Sizning Telegram ID: `{user.id}`\n"
+                    f"Ruxsat olish uchun tizim administratoriga murojaat qiling.",
+                    parse_mode="Markdown",
+                )
+            elif isinstance(event, CallbackQuery):
+                await event.answer("⛔️ Sizga ushbu botdan foydalanishga ruxsat berilmagan!", show_alert=True)
+            return
+
+        return await handler(event, data)
+
+
+# Xavfsizlik qatlamini ulash
+router.message.middleware(AccessControlMiddleware())
+router.callback_query.middleware(AccessControlMiddleware())
 
 
 @router.message(CommandStart())
