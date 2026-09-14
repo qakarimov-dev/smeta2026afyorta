@@ -42,6 +42,28 @@ def can_view_reports(user_id: int | str) -> bool:
     except Exception:
         return False
 
+
+# Ruxsat etilgan foydalanuvchilar (Faqat shu ID larga ruxsat)
+ALLOWED_USERS_RAW = os.getenv("ALLOWED_USER_IDS", "").strip()
+if ALLOWED_USERS_RAW:
+    ALLOWED_USER_IDS = [
+        int(x.strip()) for x in ALLOWED_USERS_RAW.split(",") if x.strip().isdigit()
+    ]
+else:
+    # Agar maxsus belgilanmagan bo'lsa: 2 ta admin + hisobot oluvchi (jami 3 ta ID)
+    _default_ids = list(ADMIN_IDS)
+    if REPORT_RECIPIENT_ID.isdigit():
+        _default_ids.append(int(REPORT_RECIPIENT_ID))
+    ALLOWED_USER_IDS = list(set(_default_ids))
+
+
+def is_allowed_user(user_id: int | str) -> bool:
+    """Foydalanuvchi botdan foydalanish huquqiga egaligini tekshirish"""
+    try:
+        return int(user_id) in ALLOWED_USER_IDS
+    except (ValueError, TypeError):
+        return False
+
 # AI provayderi ('gemini' yoki 'openai')
 AI_PROVIDER = os.getenv("AI_PROVIDER", "gemini").strip().lower()
 
